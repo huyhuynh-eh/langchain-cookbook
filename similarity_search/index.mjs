@@ -1,5 +1,6 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+import fs from 'fs/promises';
 
 const embeddings = new OpenAIEmbeddings({
   openAIApiKey: process.env.OPENAI_API_KEY,
@@ -43,12 +44,22 @@ await pgvectorStore.client.query("DELETE FROM similarity_search;");
 
 console.log("Cleaned database!");
 
-await pgvectorStore.addDocuments([
-  { pageContent: "Software Engineer", metadata: { id: 1 } },
-  { pageContent: "Front-end Developer", metadata: { id: 2 } },
-  { pageContent: "Back-end Developer", metadata: { id: 3 } },
-  { pageContent: "Project Manager", metadata: { id: 4 } },
-]);
+try {
+  // Read the JSON file
+  const data = await fs.readFile('similarity_search/data.json', 'utf-8');
+  
+  // Parse the JSON data
+  const documents = JSON.parse(data);
+  
+  // Add documents to pgvectorStore
+  await pgvectorStore.addDocuments(documents);
+  
+  console.log('Documents added successfully');
+} catch (error) {
+  console.error('Error adding documents:', error);
+  const files = await fs.readdir('./');
+  console.log('Current directory files:', files);
+}
 
 // Search using cosine distance by default
 // https://github.com/langchain-ai/langchainjs/blob/5df74e3/libs/langchain-community/src/vectorstores/pgvector.ts#L423
@@ -58,4 +69,5 @@ const results = await pgvectorStore.similaritySearchWithScore(queryString, 10);
 console.log(`The nearest neighbors of "${queryString}" by cosine distance are:`);
 console.log(results);
 
+// await pgvectorStore.client.end();
 await pgvectorStore.end();
