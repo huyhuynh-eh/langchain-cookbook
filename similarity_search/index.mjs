@@ -10,12 +10,20 @@ const embeddings = new OpenAIEmbeddings({
   dimensions: 2000,
 });
 
+// Get the query string from command-line arguments
+var queryString = process.argv[2];
+
+if (!queryString) {
+  console.warn("If you don't provide a query string as a command-line argument. We will use the default query string: 'frontend dev'");
+  queryString = "frontend dev";
+}
+
 const pgvectorConfig = {
   postgresConnectionOptions: {
     type: "postgres",
     host: "127.0.0.1",
     port: 5432,
-    database: "langchain_cookbook",
+    database: "vector_demo",
   },
   tableName: "similarity_search",
   columns: {
@@ -45,7 +53,6 @@ await pgvectorStore.addDocuments([
 // Search using cosine distance by default
 // https://github.com/langchain-ai/langchainjs/blob/5df74e3/libs/langchain-community/src/vectorstores/pgvector.ts#L423
 
-const queryString = "frontend dev";
 const results = await pgvectorStore.similaritySearchWithScore(queryString, 10);
 
 console.log(`The nearest neighbors of "${queryString}" by cosine distance are:`);
